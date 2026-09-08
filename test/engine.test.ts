@@ -14,6 +14,64 @@ function startDemo(engine: ReturnType<typeof tempEngine>["engine"]) {
 }
 
 describe("ChatDirectorEngine", () => {
+  it("keeps the newest chat visible beyond 200 messages in chronological order", () => {
+    const ctx = tempEngine();
+    try {
+      startDemo(ctx.engine);
+      const messages = Array.from({ length: 250 }, (_, index) => ({
+        id: `chat-${index}`,
+        author: "viewer",
+        text: `Story suggestion ${index}`,
+        publishedAt: new Date(Date.UTC(2026, 0, 1) + index * 1000).toISOString(),
+      }));
+      ctx.engine.ingestChat(messages);
+      const snapshot = ctx.engine.getSnapshot(30);
+      const expected = messages.slice(-30).map((message) => message.id);
+      expect(snapshot.chat.map((message) => message.id)).toEqual(expected);
+      expect(snapshot.unreadChat.map((message) => message.id)).toEqual(expected);
+      expect(ctx.db.prepare("SELECT COUNT(*) AS count FROM chat_messages").get()).toEqual({ count: 250 });
+      ctx.engine.ingestChat([{
+        id: "newest", author: "viewer", text: "Find the library",
+        publishedAt: "2026-01-01T00:05:00.000Z",
+      }]);
+      expect(ctx.engine.getSnapshot().unreadChat.at(-1)?.id).toBe("newest");
+    } finally {
+      ctx.close();
+    }
+  });
+
+  it("preserves the connected YouTube chat and cursor when restarting live", () => {
+    const clock = new ControllableClock(new Date("2026-01-01T00:00:00.000Z"));
+    const ctx = tempEngine(clock);
+    try {
+      ctx.engine.updateSetup({ premise: "A lantern fox searches a flooded city." });
+      ctx.engine.updateYouTube({
+        connected: true, videoId: "video-1", liveChatId: "live-chat-1", pageToken: "cursor-1",
+      });
+      const first = ctx.engine.start("live");
+      ctx.engine.stop();
+      clock.advance(1000);
+      const restarted = ctx.engine.start("live");
+      expect(restarted.id).not.toBe(first.id);
+      expect(restarted.status).toBe("running");
+      expect(restarted.youtube).toMatchObject({
+        connected: true, videoId: "video-1", liveChatId: "live-chat-1", pageToken: "cursor-1",
+      });
+      expect(ctx.engine.getSnapshot().limits.submissionsUsed).toBe(0);
+
+      ctx.engine.stop();
+      ctx.engine.updateYouTube({
+        connected: true, videoId: "video-2", liveChatId: "live-chat-2", pageToken: null,
+      });
+      clock.advance(1000);
+      expect(ctx.engine.start("live").youtube).toMatchObject({
+        connected: true, videoId: "video-2", liveChatId: "live-chat-2", pageToken: null,
+      });
+    } finally {
+      ctx.close();
+    }
+  });
+
   it("deduplicates chat message ids and never treats chat as controls", () => {
     const ctx = tempEngine();
     startDemo(ctx.engine);

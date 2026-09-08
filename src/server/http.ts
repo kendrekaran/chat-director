@@ -270,15 +270,20 @@ export async function createApp(deps: AppDependencies): Promise<FastifyInstance>
       "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
     });
-    let last = engine.currentSeq();
+    const initial = engine.getSnapshot();
+    let last = initial.seq;
+    let lastAgent = JSON.stringify(initial.agent);
     const send = () => {
       const snapshot = engine.getSnapshot();
-      if (snapshot.seq !== last) {
+      const agent = JSON.stringify(snapshot.agent);
+      // Heartbeats and inactivity still reach the desk without waking director waits.
+      if (snapshot.seq !== last || agent !== lastAgent) {
         last = snapshot.seq;
+        lastAgent = agent;
         reply.raw.write(`data: ${JSON.stringify(snapshot)}\n\n`);
       }
     };
-    reply.raw.write(`data: ${JSON.stringify(engine.getSnapshot())}\n\n`);
+    reply.raw.write(`data: ${JSON.stringify(initial)}\n\n`);
     const timer = setInterval(send, 700);
     request.raw.on("close", () => clearInterval(timer));
   });
@@ -413,4 +418,3 @@ function escapeHtml(value: string): string {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char,
   );
 }
-
