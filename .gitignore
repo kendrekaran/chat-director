@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Local runtime — credentials, chat, generated media, sqlite
+data/
+tmp/
+
+# Editor
+.idea/
+.vscode/
+*.swp

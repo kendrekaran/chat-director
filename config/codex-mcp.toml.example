@@ -1,0 +1,10 @@
+# Merge into ~/.codex/config.toml
+# https://developers.openai.com/codex/mcp
+
+[mcp_servers.chat-director]
+command = "node"
+args = ["/ABS/PATH/TO/chat-director/dist/mcp/index.js"]
+
+[mcp_servers.chat-director.env]
+CHAT_DIRECTOR_URL = "http://127.0.0.1:8787"
+CHAT_DIRECTOR_TOKEN = "paste-from-data/control-token"

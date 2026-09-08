@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Chat Director Overlay</title>
+    <link rel="stylesheet" href="/overlay/overlay.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <video id="player-a" class="player active" playsinline muted></video>
+      <video id="player-b" class="player" playsinline muted></video>
+      <div id="hold" class="hold">
+        <div class="hold-card">
+          <p class="eyebrow">Chat Director</p>
+          <h1>Holding for the next scene</h1>
+          <p class="lede">The booth is lit. The first generated scene will fade in here at 1920×1080.</p>
+          <div class="ticks" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+      <div id="grain" aria-hidden="true"></div>
+    </div>
+    <script src="/overlay/overlay.js"></script>
+  </body>
+</html>

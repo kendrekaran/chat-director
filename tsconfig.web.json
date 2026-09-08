@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "@shared": ["src/shared/index.ts"],
+      "@shared/*": ["src/shared/*"]
+    }
+  },
+  "include": ["web/src/**/*", "src/shared/index.ts", "src/shared/types.ts", "src/shared/moderation.ts", "src/shared/overlay.ts"]
+}
