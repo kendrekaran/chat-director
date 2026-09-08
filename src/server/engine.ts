@@ -604,8 +604,8 @@ export class ChatDirectorEngine {
   }
 
   recordAgentHeartbeat(): void {
+    // Liveness is not a story update: a wait request must not wake itself.
     this.agentHeartbeatAt = this.nowIso();
-    this.emit("agent", { connected: true });
   }
 
   agentStatus(): AgentStatus {
@@ -729,7 +729,9 @@ export class ChatDirectorEngine {
         JSON.stringify(previous.characters),
         JSON.stringify(previous.boundaries),
         JSON.stringify(previous.limits),
-        JSON.stringify({ ...EMPTY_YOUTUBE, videoId: previous.youtube.videoId }),
+        JSON.stringify(mode === "live"
+          ? { ...previous.youtube, chatStatus: "idle", lastError: null }
+          : { ...EMPTY_YOUTUBE, videoId: previous.youtube.videoId }),
         previous.demoAutoDirector ? 1 : 0,
         now,
         now,
@@ -835,10 +837,12 @@ export class ChatDirectorEngine {
   private listChat(sessionId: string, limit: number): ChatMessage[] {
     const rows = this.db
       .prepare(
-        `SELECT * FROM chat_messages WHERE session_id = ? ORDER BY published_at ASC, ingested_at ASC LIMIT ?`,
+        `SELECT * FROM chat_messages WHERE session_id = ?
+         ORDER BY published_at DESC, ingested_at DESC, rowid DESC LIMIT ?`,
       )
       .all(sessionId, limit) as ChatRow[];
-    return rows.map(chatFromRow);
+    // Limit the newest messages first, then present that window chronologically.
+    return rows.reverse().map(chatFromRow);
   }
 
   private listErrors(sessionId: string) {
